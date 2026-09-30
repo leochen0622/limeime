@@ -1855,6 +1855,25 @@ public class LIMEService extends InputMethodService
 
 
     /**
+     * Commit the composing code itself (the typed roots) instead of a candidate.
+     *
+     * @return false if not composing in IM mode, leaving the key to the caller.
+     */
+    private boolean commitRawComposing() {
+        if (mEnglishOnly || mComposing == null || mComposing.length() == 0)
+            return false;
+        InputConnection ic = getCurrentInputConnection();
+        if (ic != null) ic.commitText(mComposing.toString(), 1);
+        if (!LDComposingBuffer.isEmpty()) {
+            // Interrupts a continuous (LD) phrase, like any commit outside commitTyped().
+            LDComposingBuffer = "";
+            if (SearchSrv != null) SearchSrv.addLDPhrase(null, true);
+        }
+        clearComposing(false);
+        return true;
+    }
+
+    /**
      * Helper function to commit any text being composed in to the editor.
      */
     private void commitTyped(InputConnection ic) {
@@ -2335,6 +2354,9 @@ public class LIMEService extends InputMethodService
             switchKeyboard(primaryCode);
         } else if (handleEndkeyCommit(primaryCode)) {
             // End-key commit is opt-in per IM table metadata and consumes the trigger key.
+        } else if (primaryCode == MY_KEYCODE_ENTER && commitRawComposing()) {
+            // Enter while composing commits the typed code itself, as tapping it in the
+            // candidate bar does, whether or not it maps to any candidate.
         } else if ( //Jeremy '12,7,1 bug fixed on enter not functioning in english mode
                 ((primaryCode == MY_KEYCODE_SPACE && !mEnglishOnly && !activeIM.equals(LIME.IM_PHONETIC))
                         || (primaryCode == MY_KEYCODE_SPACE && !mEnglishOnly &&
