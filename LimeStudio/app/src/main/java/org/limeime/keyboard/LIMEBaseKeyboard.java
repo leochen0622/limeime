@@ -414,6 +414,34 @@ public class LIMEBaseKeyboard {
          * Text to output when pressed. This can be multiple characters, like ".com"
          */
         public CharSequence text;
+
+        // Swipe directions, used as indexes into swipeTexts. Flag values in attrs.xml
+        // (swipeAsKey) are 1 << direction.
+        public static final int SWIPE_NONE = -1;
+        public static final int SWIPE_UP = 0;
+        public static final int SWIPE_DOWN = 1;
+        public static final int SWIPE_LEFT = 2;
+        public static final int SWIPE_RIGHT = 3;
+
+        /**
+         * Text to output when the key is swiped in each direction, or null if unmapped
+         */
+        public CharSequence[] swipeTexts;
+        /**
+         * Bit (1 << direction) set if that swipe is sent as a key press instead of literal text
+         */
+        public int swipeAsKeyFlags;
+
+        public CharSequence getSwipeText(int direction) {
+            if (swipeTexts == null || direction < 0 || direction >= swipeTexts.length)
+                return null;
+            return swipeTexts[direction];
+        }
+
+        public boolean isSwipeAsKey(int direction) {
+            return direction >= 0 && (swipeAsKeyFlags & (1 << direction)) != 0;
+        }
+
         /**
          * Popup characters
          */
@@ -543,6 +571,8 @@ public class LIMEBaseKeyboard {
             icon = key.icon;
             label = key.label;
             text = key.text;
+            swipeTexts = key.swipeTexts;
+            swipeAsKeyFlags = key.swipeAsKeyFlags;
             if (iconPreview != null) {
                 iconPreview.setBounds(0, 0, iconPreview.getIntrinsicWidth(),
                         iconPreview.getIntrinsicHeight());
@@ -633,6 +663,19 @@ public class LIMEBaseKeyboard {
                 }
                 label = a.getText(R.styleable.LIMEBaseKeyboard_Key_keyLabel);
                 text = a.getText(R.styleable.LIMEBaseKeyboard_Key_keyOutputText);
+
+                CharSequence[] swipes = {
+                        a.getText(R.styleable.LIMEBaseKeyboard_Key_swipeUp),
+                        a.getText(R.styleable.LIMEBaseKeyboard_Key_swipeDown),
+                        a.getText(R.styleable.LIMEBaseKeyboard_Key_swipeLeft),
+                        a.getText(R.styleable.LIMEBaseKeyboard_Key_swipeRight)};
+                for (CharSequence swipe : swipes) {
+                    if (!TextUtils.isEmpty(swipe)) {
+                        swipeTexts = swipes;
+                        break;
+                    }
+                }
+                swipeAsKeyFlags = a.getInt(R.styleable.LIMEBaseKeyboard_Key_swipeAsKey, 0);
 
                 if (codes == null && !TextUtils.isEmpty(label)) {
                     codes = new int[]{label.charAt(0)};

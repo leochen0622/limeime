@@ -47,6 +47,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
+import android.text.TextUtils;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -220,6 +221,12 @@ public class LIMEKeyboardBaseView extends View implements PointerTracker.UIProxy
     // Main keyboard
     private LIMEBaseKeyboard mKeyboard;
     private Key[] mKeys;
+    // True if any key of the current keyboard has swipe hints; its labels are then raised.
+    private boolean mHasSwipeHints;
+    // Main labels of such a keyboard are raised by this fraction of the key height, making room
+    // for the swipe-down hints; hints are drawn at this fraction of the main label size.
+    private static final float SWIPE_LABEL_RAISE_RATIO = 0.2f;
+    private static final float SWIPE_HINT_SIZE_RATIO = 0.8f;
     // TODO this attribute should be gotten from Keyboard.
     private int mKeyboardVerticalGap;
 
@@ -832,6 +839,13 @@ public class LIMEKeyboardBaseView extends View implements PointerTracker.UIProxy
         //LatinImeLogger.onSetKeyboard(keyboard);
         mKeys = mKeyDetector.setKeyboard(keyboard, -getPaddingLeft(),
                 -getPaddingTop() + mVerticalCorrection);
+        mHasSwipeHints = false;
+        for (Key key : mKeys) {
+            if (key.swipeTexts != null) {
+                mHasSwipeHints = true;
+                break;
+            }
+        }
         mKeyboardVerticalGap = (int) getResources().getDimension(R.dimen.key_bottom_gap);
         for (PointerTracker tracker : mPointerTrackers) {
             tracker.setKeyboard(mKeys, mKeyHysteresisDistance);
@@ -1273,7 +1287,17 @@ public class LIMEKeyboardBaseView extends View implements PointerTracker.UIProxy
 
                     } else {
                         paint.setColor(keyColor);
+                        // Raise character labels on swipe keyboards, except where a swipe-up
+                        // hint occupies the top of the key (',' and '.').
+                        if (mHasSwipeHints && !key.isFunctionalKey()
+                                && TextUtils.isEmpty(key.getSwipeText(Key.SWIPE_UP)))
+                            baseline -= (key.height - padding.top - padding.bottom)
+                                    * SWIPE_LABEL_RAISE_RATIO;
                         canvas.drawText(label, centerX, baseline, paint);
+                    }
+                    if (key.swipeTexts != null) {
+                        drawSwipeHints(canvas, paint, key, padding, subKeyColor,
+                                Math.round(labelSize * SWIPE_HINT_SIZE_RATIO));
                     }
                     // Turn off drop shadow
                     if (mShadowRadius > 0) paint.setShadowLayer(0, 0, 0, 0);
@@ -1737,6 +1761,46 @@ public class LIMEKeyboardBaseView extends View implements PointerTracker.UIProxy
         //return isNumberAtEdgeOfPopupChars(key) || isLatinF1Key(key);
         //|| LIMEKeyboard.hasPuncOrSmileysPopup(key);
 
+    }
+
+    /**
+     * Draw each swipe text as a small hint on the matching edge of the key: up at the top
+     * centre, down at the bottom centre, left/right at the vertical middle of each side.
+     * Expects the canvas translated to the key's origin and the paint centre-aligned.
+     */
+    private void drawSwipeHints(Canvas canvas, Paint paint, Key key, Rect padding,
+                                int color, int textSize) {
+        final int left = padding.left;
+        final int top = padding.top;
+        final int right = key.width - padding.right;
+        final int bottom = key.height - padding.bottom;
+        paint.setTypeface(Typeface.DEFAULT_BOLD);
+        paint.setTextSize(Math.max(1, textSize));
+        paint.setColor(color);
+        final Paint.FontMetrics fm = paint.getFontMetrics();
+        final float inset = textSize * 0.15f;
+        final float centerX = (left + right) / 2f;
+        final float middleBaseline = (top + bottom) / 2f - (fm.ascent + fm.descent) / 2f;
+        for (int direction = Key.SWIPE_UP; direction <= Key.SWIPE_RIGHT; direction++) {
+            CharSequence hint = key.getSwipeText(direction);
+            if (TextUtils.isEmpty(hint)) continue;
+            String text = hint.toString();
+            float halfWidth = paint.measureText(text) / 2f;
+            switch (direction) {
+                case Key.SWIPE_UP:
+                    canvas.drawText(text, centerX, top + inset - fm.ascent, paint);
+                    break;
+                case Key.SWIPE_DOWN:
+                    canvas.drawText(text, centerX, bottom - inset - fm.descent, paint);
+                    break;
+                case Key.SWIPE_LEFT:
+                    canvas.drawText(text, left + inset + halfWidth, middleBaseline, paint);
+                    break;
+                case Key.SWIPE_RIGHT:
+                    canvas.drawText(text, right - inset - halfWidth, middleBaseline, paint);
+                    break;
+            }
+        }
     }
 
     private boolean shouldDrawLabelAndIcon(Key key) {

@@ -28,6 +28,7 @@ import org.limeime.keyboard.LIMEKeyboardBaseView.OnKeyboardActionListener;
 import org.limeime.keyboard.LIMEBaseKeyboard.Key;
 
 import android.content.res.Resources;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.MotionEvent;
 
@@ -77,6 +78,14 @@ public class PointerTracker {
 
     // pressed key
     private int mPreviousKey = NOT_A_KEY;
+
+    // Per-key swipe (swipeUp/Down/Left/Right). A swipe must travel this fraction of the key's
+    // width (horizontal) or height (vertical) from the down point.
+    private static final float SWIPE_THRESHOLD_RATIO = 0.4f;
+    // Key pressed down that has swipe mappings, or NOT_A_KEY.
+    private int mSwipeKeyIndex = NOT_A_KEY;
+    // Mapped direction the pointer is currently swiping in, or Key.SWIPE_NONE.
+    private int mSwipeDirection = Key.SWIPE_NONE;
 
     // This class keeps track of a key index and a position where this pointer is.
     private static class KeyState {
@@ -285,6 +294,7 @@ public class PointerTracker {
         mKeyAlreadyProcessed = false;
         mIsRepeatableKey = false;
         mIsInSlidingKeyInput = false;
+        mSwipeDirection = Key.SWIPE_NONE;
         if (mListener != null) {
             if (isValidKeyIndex(keyIndex)) {
                 mListener.onPress(mKeys[keyIndex].codes[0]);
@@ -297,6 +307,8 @@ public class PointerTracker {
                 }
             }
         }
+        mSwipeKeyIndex = isValidKeyIndex(keyIndex) && mKeys[keyIndex].swipeTexts != null
+                ? keyIndex : NOT_A_KEY;
         if (isValidKeyIndex(keyIndex)) {
             if (mKeys[keyIndex].repeatable && mKeys[keyIndex].codes[0]!= LIMEKeyboard.KEYCODE_SPACE) {
                 repeatKey(keyIndex);
@@ -314,6 +326,8 @@ public class PointerTracker {
         if (DEBUG_MOVE)
             debugLog("onMoveEvent:", x, y);
         if (mKeyAlreadyProcessed)
+            return;
+        if (trackSwipe(x, y))
             return;
         final KeyState keyState = mKeyState;
         int keyIndex = keyState.onMoveKey(x, y);
@@ -379,6 +393,17 @@ public class PointerTracker {
         mIsInSlidingKeyInput = false;
         if (mKeyAlreadyProcessed)
             return;
+        if (mSwipeKeyIndex != NOT_A_KEY) {
+            final Key swipeKey = mKeys[mSwipeKeyIndex];
+            final int direction = detectSwipeDirection(swipeKey, x, y);
+            mSwipeKeyIndex = NOT_A_KEY;
+            mSwipeDirection = Key.SWIPE_NONE;
+            if (direction != Key.SWIPE_NONE) {
+                sendSwipe(swipeKey, direction, x, y);
+                mProxy.invalidateKey(swipeKey);
+                return;
+            }
+        }
         int keyIndex = mKeyState.onUpKey(x, y);
         if (isMinorMoveBounce(x, y, keyIndex)) {
             // Use previous fixed key index and coordinates.
@@ -403,6 +428,8 @@ public class PointerTracker {
         mHandler.cancelPopupPreview();
         showKeyPreviewAndUpdateKey(NOT_A_KEY);
         mIsInSlidingKeyInput = false;
+        mSwipeKeyIndex = NOT_A_KEY;
+        mSwipeDirection = Key.SWIPE_NONE;
         int keyIndex = mKeyState.getKeyIndex();
         if (isValidKeyIndex(keyIndex))
            mProxy.invalidateKey(mKeys[keyIndex]);
@@ -522,7 +549,79 @@ public class PointerTracker {
         }
     }
 
+    /**
+     * Follow a per-key swipe while the pointer moves.
+     *
+     * @return true if the pointer is swiping in a mapped direction of the key it went down on;
+     * the pointer then stays on that key instead of sliding onto its neighbours.
+     */
+    private boolean trackSwipe(int x, int y) {
+        if (mSwipeKeyIndex == NOT_A_KEY)
+            return false;
+        final int direction = detectSwipeDirection(mKeys[mSwipeKeyIndex], x, y);
+        if (direction == mSwipeDirection)
+            return direction != Key.SWIPE_NONE;
+        final boolean swipeStarted = mSwipeDirection == Key.SWIPE_NONE;
+        mSwipeDirection = direction;
+        if (direction == Key.SWIPE_NONE) {
+            // Back within the threshold (or turned to an unmapped direction): normal handling.
+            mProxy.showPreview(NOT_A_KEY, this);
+            mProxy.showPreview(mKeyState.getKeyIndex(), this);
+            return false;
+        }
+        if (swipeStarted) {
+            mHandler.cancelLongPressTimer();
+            if (mKeyState.getKeyIndex() != mSwipeKeyIndex) {
+                // Crossed onto a neighbour before the threshold was reached: move back.
+                if (mListener != null && isValidKeyIndex(mKeyState.getKeyIndex()))
+                    mListener.onRelease(mKeys[mKeyState.getKeyIndex()].codes[0]);
+                mKeyState.onMoveToNewKey(mSwipeKeyIndex, mKeyState.getStartX(),
+                        mKeyState.getStartY());
+                updateKey(mSwipeKeyIndex);
+            }
+        }
+        // Force the preview to be re-created so it shows the swipe text.
+        mProxy.showPreview(NOT_A_KEY, this);
+        mProxy.showPreview(mSwipeKeyIndex, this);
+        return true;
+    }
+
+    private int detectSwipeDirection(Key key, int x, int y) {
+        final int dx = x - mKeyState.getStartX();
+        final int dy = y - mKeyState.getStartY();
+        final int direction;
+        if (Math.abs(dx) > Math.abs(dy)) {
+            if (Math.abs(dx) < key.width * SWIPE_THRESHOLD_RATIO)
+                return Key.SWIPE_NONE;
+            direction = dx > 0 ? Key.SWIPE_RIGHT : Key.SWIPE_LEFT;
+        } else {
+            if (Math.abs(dy) < key.height * SWIPE_THRESHOLD_RATIO)
+                return Key.SWIPE_NONE;
+            direction = dy > 0 ? Key.SWIPE_DOWN : Key.SWIPE_UP;
+        }
+        return TextUtils.isEmpty(key.getSwipeText(direction)) ? Key.SWIPE_NONE : direction;
+    }
+
+    private void sendSwipe(Key key, int direction, int x, int y) {
+        final OnKeyboardActionListener listener = mListener;
+        if (listener == null)
+            return;
+        final CharSequence text = key.getSwipeText(direction);
+        if (key.isSwipeAsKey(direction) && text.length() == 1) {
+            // Goes through the normal key path, so it may become an IM root.
+            final int code = text.charAt(0);
+            listener.onKey(code, new int[]{code}, x, y);
+            listener.onRelease(code);
+        } else {
+            listener.onText(text);
+            listener.onRelease(0); // dummy key code
+        }
+    }
+
     public CharSequence getPreviewText(Key key) {
+        if (mSwipeDirection != Key.SWIPE_NONE && isValidKeyIndex(mSwipeKeyIndex)
+                && key == mKeys[mSwipeKeyIndex])
+            return key.getSwipeText(mSwipeDirection);
         return key.label;
     }
 

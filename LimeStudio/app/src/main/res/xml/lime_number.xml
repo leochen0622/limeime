@@ -31,20 +31,20 @@
     >
 
     <Row>
-        <Key limehd:codes="49" limehd:keyLabel="1" limehd:keyEdgeFlags="left"/>
-        <Key limehd:codes="50" limehd:keyLabel="2"/>
-        <Key limehd:codes="51" limehd:keyLabel="3"/>
-        <Key limehd:codes="52" limehd:keyLabel="4"/>
-        <Key limehd:codes="53" limehd:keyLabel="5"/>
-        <Key limehd:codes="54" limehd:keyLabel="6"/>
-        <Key limehd:codes="55" limehd:keyLabel="7"/>
-        <Key limehd:codes="56" limehd:keyLabel="8"/>
-        <Key limehd:codes="57" limehd:keyLabel="9"/>
-        <Key limehd:codes="48" limehd:keyLabel="0" limehd:keyEdgeFlags="right"/>
+        <Key limehd:codes="49" limehd:swipeDown="!" limehd:swipeRight="~" limehd:keyLabel="1" limehd:keyEdgeFlags="left"/>
+        <Key limehd:codes="50" limehd:swipeDown="\@" limehd:keyLabel="2"/>
+        <Key limehd:codes="51" limehd:swipeDown="#" limehd:keyLabel="3"/>
+        <Key limehd:codes="52" limehd:swipeDown="$" limehd:keyLabel="4"/>
+        <Key limehd:codes="53" limehd:swipeDown="%" limehd:keyLabel="5"/>
+        <Key limehd:codes="54" limehd:swipeDown="^" limehd:keyLabel="6"/>
+        <Key limehd:codes="55" limehd:swipeDown="&amp;" limehd:keyLabel="7"/>
+        <Key limehd:codes="56" limehd:swipeDown="*" limehd:keyLabel="8"/>
+        <Key limehd:codes="57" limehd:swipeDown="(" limehd:keyLabel="9"/>
+        <Key limehd:codes="48" limehd:swipeDown=")" limehd:keyLabel="0" limehd:keyEdgeFlags="right"/>
     </Row>
     
     <Row>
-        <Key limehd:codes="113" limehd:keyLabel="q" limehd:keyEdgeFlags="left"/>
+        <Key limehd:codes="113" limehd:swipeRight="`" limehd:keyLabel="q" limehd:keyEdgeFlags="left"/>
         <Key limehd:codes="119" limehd:keyLabel="w"/>
         <Key limehd:codes="101" limehd:keyLabel="e"/>
         <Key limehd:codes="114" limehd:keyLabel="r"/>
@@ -52,8 +52,8 @@
         <Key limehd:codes="121" limehd:keyLabel="y"/>
         <Key limehd:codes="117" limehd:keyLabel="u"/>
         <Key limehd:codes="105" limehd:keyLabel="i"/>
-        <Key limehd:codes="111" limehd:keyLabel="o"/>
-        <Key limehd:codes="112" limehd:keyLabel="p" limehd:keyEdgeFlags="right"/>
+        <Key limehd:codes="111" limehd:swipeDown="-" limehd:swipeLeft="_" limehd:keyLabel="o"/>
+        <Key limehd:codes="112" limehd:swipeDown="=" limehd:swipeLeft="+" limehd:keyLabel="p" limehd:keyEdgeFlags="right"/>
     </Row>
     
     <Row>
@@ -64,9 +64,9 @@
         <Key limehd:codes="102" limehd:keyLabel="f"/>
         <Key limehd:codes="103" limehd:keyLabel="g"/>
         <Key limehd:codes="104" limehd:keyLabel="h"/>
-        <Key limehd:codes="106" limehd:keyLabel="j"/>
-        <Key limehd:codes="107" limehd:keyLabel="k"/>
-        <Key limehd:codes="108" limehd:keyLabel="l" limehd:keyEdgeFlags="right"/>
+        <Key limehd:codes="106" limehd:swipeDown="[" limehd:swipeLeft="{" limehd:swipeAsKey="down" limehd:keyLabel="j"/>
+        <Key limehd:codes="107" limehd:swipeDown="]" limehd:swipeLeft="}" limehd:swipeAsKey="down" limehd:keyLabel="k"/>
+        <Key limehd:codes="108" limehd:swipeDown="\\" limehd:swipeLeft="|" limehd:keyLabel="l" limehd:keyEdgeFlags="right"/>
     </Row>
     
     <Row>
@@ -77,9 +77,9 @@
         <Key limehd:codes="120" limehd:keyLabel="x"/>
         <Key limehd:codes="99" limehd:keyLabel="c"/>
         <Key limehd:codes="118" limehd:keyLabel="v"/>
-        <Key limehd:codes="98" limehd:keyLabel="b"/>
-        <Key limehd:codes="110" limehd:keyLabel="n"/>
-        <Key limehd:codes="109" limehd:keyLabel="m"/>
+        <Key limehd:codes="98" limehd:swipeDown=";" limehd:swipeLeft=":" limehd:keyLabel="b"/>
+        <Key limehd:codes="110" limehd:swipeDown="\'" limehd:swipeLeft="\&quot;" limehd:swipeAsKey="down" limehd:keyLabel="n"/>
+        <Key limehd:codes="109" limehd:swipeDown="/" limehd:swipeLeft="\?" limehd:keyLabel="m"/>
         <Key limehd:codes="-5" limehd:keyIcon="@drawable/sym_keyboard_delete_light" limehd:isModifier="true"
                 limehd:keyWidth="15%p" limehd:keyEdgeFlags="right"
                 limehd:isRepeatable="true"/>
@@ -88,9 +88,9 @@
     <Row limehd:rowEdgeFlags="bottom">
         <Key limehd:codes="-3"  limehd:keyIcon="@drawable/sym_keyboard_done_light" limehd:isModifier="true" limehd:keyWidth="15%p" limehd:keyEdgeFlags="left"/>
         <Key limehd:codes="-9" limehd:keyLabel="EN" limehd:isModifier="true" limehd:keyWidth="10%p" />
-        <Key limehd:codes="44" limehd:keyLabel="," limehd:keyWidth="10%p"/>
+        <Key limehd:codes="44" limehd:swipeUp="&lt;" limehd:keyLabel="," limehd:keyWidth="10%p"/>
         <Key limehd:codes="32" limehd:keyIcon="@drawable/sym_flat_keyboard_space"  limehd:keyWidth="30%p" limehd:isRepeatable="true"/>
-        <Key limehd:codes="46" 
+        <Key limehd:codes="46" limehd:swipeUp="&gt;" 
         		limehd:keyLabel="."
         		 limehd:popupKeyboard="@xml/popup_c_punctuation"   
         		limehd:keyWidth="10%p"/>

@@ -179,6 +179,20 @@
         <!-- Mode of the keyboard. If the mode doesn't match the
              requested keyboard mode, the key will be skipped. -->
         <attr name="keyboardMode" />
+        <!-- Text committed when the key is swiped up/down/left/right. Also drawn as a small
+             hint on the matching edge of the key. -->
+        <attr name="swipeUp" format="string" />
+        <attr name="swipeDown" format="string" />
+        <attr name="swipeLeft" format="string" />
+        <attr name="swipeRight" format="string" />
+        <!-- Swipe directions whose single character is sent as a key press (so it can be an
+             IM root) instead of being committed literally. -->
+        <attr name="swipeAsKey">
+            <flag name="up" value="1" />
+            <flag name="down" value="2" />
+            <flag name="left" value="4" />
+            <flag name="right" value="8" />
+        </attr>
     </declare-styleable>
 
     <declare-styleable name="LIMECandidateView">
