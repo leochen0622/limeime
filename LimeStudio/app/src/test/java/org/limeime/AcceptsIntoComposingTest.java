@@ -81,6 +81,19 @@ public class AcceptsIntoComposingTest {
         assertFalse(LIMEService.acceptsIntoComposing('/', et26, false, false, true));  // BPMF '/' — NOT a root
     }
 
+    // Upper-case letters (Shift / Caps lock) are committed as-is, not used as roots, unless the
+    // table declares the upper-case letter itself.
+    @Test public void upperCase_notRoot_unlessDeclared() {
+        String liu = "abcdefghijklmnopqrstuvwxyz,.'[]";
+        assertTrue(LIMEService.acceptsIntoComposing('a', liu, false, false, false));
+        assertFalse(LIMEService.acceptsIntoComposing('A', liu, false, false, false));
+        assertFalse(LIMEService.acceptsIntoComposing('Z', liu, false, false, false));
+        assertTrue(LIMEService.acceptsIntoComposing('[', liu, false, false, false));
+        assertTrue(LIMEService.acceptsIntoComposing('A', "aA", false, false, false));   // declared
+        assertFalse(LIMEService.acceptsIntoComposing('A', "", false, false, false));    // fallback path
+        assertFalse(LIMEService.acceptsIntoComposing('A', "", true, true, false));
+    }
+
     // ---- acceptsIntoComposing: custom-no-imkeys fallback (imkeys empty) — all 5 branches ----
     @Test public void fallback_commaDot_whenNoSymbol() {                      // branch: !hasSymbol && (,|.)
         assertTrue(LIMEService.acceptsIntoComposing(',', "", false, true, false));

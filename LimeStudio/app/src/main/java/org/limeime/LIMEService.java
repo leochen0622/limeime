@@ -2159,6 +2159,13 @@ public class LIMEService extends InputMethodService
     static boolean acceptsIntoComposing(int code, String imkeys, boolean hasSymbol, boolean hasNumber, boolean isPhonetic) {
         boolean isPhoneticSpace = code == MY_KEYCODE_SPACE && isPhonetic;
 
+        // Upper-case letters (Shift / Caps lock) are committed as-is unless the table
+        // explicitly declares them as roots; isKeyInImkeys() alone is case-insensitive.
+        if (code >= 'A' && code <= 'Z'
+                && (imkeys == null || imkeys.indexOf((char) code) < 0)) {
+            return false;
+        }
+
         // Authoritative path: the active IM's imkeys decide root-ness (isKeyInImkeys is true for
         // ',' / '.' for every IM). Mirrors iOS KeyboardViewController.acceptsIntoComposing — the
         // heuristic below runs ONLY for a custom IM imported without imkeys.
