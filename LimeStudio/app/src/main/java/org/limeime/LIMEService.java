@@ -206,6 +206,10 @@ public class LIMEService extends InputMethodService
     private StringBuilder mComposing = new StringBuilder();
 
     private boolean mPredictionOn;
+    // Show the IM composing code in the editor (underlined). Independent of mPredictionOn, which
+    // search/filter/no-suggestion fields turn off for English prediction; only password and
+    // email fields keep the code out of the editor.
+    private boolean mInlineComposing;
     private boolean mCompletionOn;
     private boolean mCapsLock;
     private long mLastShiftTime = -1;
@@ -828,7 +832,7 @@ public class LIMEService extends InputMethodService
             mComposing.setLength(0);
             mComposing.append(savedComposing);
             InputConnection ic = getCurrentInputConnection();
-            if (ic != null && mPredictionOn) {
+            if (ic != null && mInlineComposing) {
                 ic.setComposingText(mComposing, 1);
             }
             // Update candidates to show the composing text and candidates for the first key
@@ -940,6 +944,7 @@ public class LIMEService extends InputMethodService
             mKeyboardSwitcher.setActivatedIMList(activatedIMList, activatedIMShortNameList);
         }
         mPredictionOn = true;
+        mInlineComposing = true;
         mCompletionOn = false;
         mCompletions = null;
         mCapsLock = false;
@@ -1006,6 +1011,7 @@ public class LIMEService extends InputMethodService
                 // Switch keyboard here.
                 if (isForcedEnglishTextVariation(variation)) {
                     mPredictionOn = false;
+                    mInlineComposing = false;
                     mEnglishOnly = true;
                     mKeyboardSwitcher.setKeyboardMode(activeIM,
                             LIMEKeyboardSwitcher.MODE_EMAIL, mImeOptions, false, false, false);
@@ -1371,7 +1377,7 @@ public class LIMEService extends InputMethodService
                 // Ensure composing text is set in InputConnection before showing InputView
                 if (mComposing != null && mComposing.length() > 0) {
                     InputConnection inputConn = getCurrentInputConnection();
-                    if (inputConn != null && mPredictionOn) {
+                    if (inputConn != null && mInlineComposing) {
                         // Explicitly set composing text to ensure it's committed before showing InputView
                         inputConn.setComposingText(mComposing, 1);
                     }
@@ -1978,7 +1984,7 @@ public class LIMEService extends InputMethodService
                                 if (DEBUG)
                                     Log.i(TAG, "commitTyped(): new mComposing:'" + mComposing + "'");
                                 if (mComposing.length() > 0) { //Jeremy '12,7,11 only fetch remaining composing when length >0
-                                    if (ic != null && mPredictionOn)
+                                    if (ic != null && mInlineComposing)
                                         ic.setComposingText(mComposing, 1);
                                     shouldUpdateCandidates = true;
                                 }
@@ -2468,7 +2474,7 @@ public class LIMEService extends InputMethodService
         String code = String.valueOf((char) primaryCode);
         mComposing.append(code);
         InputConnection ic = getCurrentInputConnection();
-        if (ic != null && mPredictionOn) {
+        if (ic != null && mInlineComposing) {
             ic.setComposingText(mComposing, 1);
         }
         // The declared root was already appended. Consume this key even when the combined
@@ -2497,7 +2503,7 @@ public class LIMEService extends InputMethodService
         String code = String.valueOf((char) primaryCode);
         mComposing.append(code);
         InputConnection ic = getCurrentInputConnection();
-        if (ic != null && mPredictionOn) {
+        if (ic != null && mInlineComposing) {
             ic.setComposingText(mComposing, 1);
         }
         if (commitResolvedEndkeyComposing()) {
@@ -4545,7 +4551,7 @@ public class LIMEService extends InputMethodService
                     mComposing = new StringBuilder();
                     mComposing.append(keyString);
                     InputConnection ic = getCurrentInputConnection();
-                    if (ic != null && mPredictionOn) ic.setComposingText(keyString, 1);
+                    if (ic != null && mInlineComposing) ic.setComposingText(keyString, 1);
                 }
             }
 
@@ -5245,7 +5251,7 @@ public class LIMEService extends InputMethodService
         InputConnection ic = getCurrentInputConnection();
         if (length > 1) {
             mComposing.delete(length - 1, length);
-            if (ic != null && mPredictionOn) ic.setComposingText(mComposing, 1);
+            if (ic != null && mInlineComposing) ic.setComposingText(mComposing, 1);
             updateCandidates();
         } else if (length == 1) {
             //Jeremy '12,4, 21 force clear the last characacter in composing
@@ -5791,7 +5797,7 @@ public class LIMEService extends InputMethodService
             if (acceptsIntoComposing(primaryCode, currentImKeys, hasSymbolMapping, hasNumberMapping, isPhonetic)) {
                 mComposing.append((char) primaryCode);
                 //InputConnection ic=getCurrentInputConnection();
-                if (ic != null && mPredictionOn) ic.setComposingText(mComposing, 1);
+                if (ic != null && mInlineComposing) ic.setComposingText(mComposing, 1);
                 updateCandidates();
                 //misMatched = mComposing.toString();
             } else if (mComposing != null
@@ -5805,7 +5811,7 @@ public class LIMEService extends InputMethodService
                 // regular Array30 codes.
                 mComposing.append((char) primaryCode);
                 //InputConnection ic=getCurrentInputConnection();
-                if (ic != null && mPredictionOn) ic.setComposingText(mComposing, 1);
+                if (ic != null && mInlineComposing) ic.setComposingText(mComposing, 1);
                 updateCandidates();
                 //misMatched = mComposing.toString();
             } else {
@@ -6098,7 +6104,7 @@ public class LIMEService extends InputMethodService
         }
 
         if (currentSoftKeyboard.contains("wb")) {
-            if (ic != null && mPredictionOn) ic.setComposingText("", 0);
+            if (ic != null && mInlineComposing) ic.setComposingText("", 0);
         }
 
     }
