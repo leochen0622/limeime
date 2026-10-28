@@ -2180,6 +2180,11 @@ final class KeyboardViewController: UIInputViewController, UIInputViewAudioFeedb
             && (48...57).contains(code)
     }
 
+    /// Only reached for a key the table does not accept into composing.
+    static func commitsComposingAsTyped(code: Int, composing: String) -> Bool {
+        !composing.isEmpty && (48...57).contains(code)
+    }
+
     private func handleCharacter(_ code: Int) {
         guard code > 0, let scalar = Unicode.Scalar(code) else { return }
         let char      = Character(scalar)
@@ -2216,6 +2221,14 @@ final class KeyboardViewController: UIInputViewController, UIInputViewAudioFeedb
             composingLength += 1
             // WB: truncate query code to 5 characters
             updateCandidates()
+        } else if Self.commitsComposingAsTyped(code: code, composing: mComposing) {
+            // A digit that is not a root ends composing with the typed code itself:
+            // Boshiamy "bcs6" gives "bcs6", while "bcs 6" still gives "陳6".
+            commitRawComposing()
+            isSelfUpdate = true
+            textDocumentProxy.insertText(charStr)
+            isSelfUpdate = false
+            finishComposing()
         } else {
             // Not accepted: commit current candidate, then send char directly (spec §5)
             _ = pickHighlightedCandidate()
@@ -2643,6 +2656,17 @@ final class KeyboardViewController: UIInputViewController, UIInputViewAudioFeedb
             isSelfUpdate = false
         }
         cancelComposing()
+    }
+
+    /// Commit the composing code itself (the typed roots) instead of a candidate. The code is
+    /// already in the document as inline composing text, so this only ends composing.
+    private func commitRawComposing() {
+        if !LDComposingBuffer.isEmpty {
+            // Interrupts a continuous (LD) phrase, like any commit outside commitTyped().
+            LDComposingBuffer = ""
+            if learnPhrase { searchServer?.addLDPhrase(nil, ending: true) }
+        }
+        clearComposing(force: false)
     }
 
     /// Reset composing tracking after text has been committed or cleared.

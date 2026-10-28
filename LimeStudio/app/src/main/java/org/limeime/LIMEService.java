@@ -5814,6 +5814,12 @@ public class LIMEService extends InputMethodService
                 if (ic != null && mInlineComposing) ic.setComposingText(mComposing, 1);
                 updateCandidates();
                 //misMatched = mComposing.toString();
+            } else if (commitsComposingAsTyped(primaryCode, mComposing)) {
+                // A digit that is not a root ends composing with the typed code itself:
+                // Boshiamy "bcs6" gives "bcs6", while "bcs 6" still gives "陳6".
+                commitRawComposing();
+                if (ic != null) ic.commitText(String.valueOf((char) primaryCode), 1);
+                finishComposing();
             } else {
 
 
@@ -5889,6 +5895,12 @@ public class LIMEService extends InputMethodService
     static boolean isArraySymbolDigit(String activeIM, String composing, int code) {
         return LIME.IM_ARRAY.equals(activeIM)
                 && composing.matches("(?:w|hg)[0-9]*")
+                && code >= '0' && code <= '9';
+    }
+
+    // Only reached for a key the table does not accept into composing.
+    static boolean commitsComposingAsTyped(int code, CharSequence composing) {
+        return composing != null && composing.length() > 0
                 && code >= '0' && code <= '9';
     }
 

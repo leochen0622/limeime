@@ -94,6 +94,19 @@ public class AcceptsIntoComposingTest {
         assertFalse(LIMEService.acceptsIntoComposing('A', "", true, true, false));
     }
 
+    // A non-root digit commits the composing code as typed ("bcs6" -> "bcs6"); other non-root
+    // keys still commit the highlighted candidate first.
+    @Test public void nonRootDigit_commitsComposingAsTyped() {
+        String liu = "abcdefghijklmnopqrstuvwxyz,.'[]";
+        assertFalse(LIMEService.acceptsIntoComposing('6', liu, false, false, false));
+        assertTrue(LIMEService.commitsComposingAsTyped('0', "bcs"));
+        assertTrue(LIMEService.commitsComposingAsTyped('6', "bcs"));
+        assertTrue(LIMEService.commitsComposingAsTyped('9', "bcs"));
+        assertFalse(LIMEService.commitsComposingAsTyped('6', ""));      // nothing composing
+        assertFalse(LIMEService.commitsComposingAsTyped('-', "bcs"));   // symbol
+        assertFalse(LIMEService.commitsComposingAsTyped('A', "bcs"));
+    }
+
     // ---- acceptsIntoComposing: custom-no-imkeys fallback (imkeys empty) — all 5 branches ----
     @Test public void fallback_commaDot_whenNoSymbol() {                      // branch: !hasSymbol && (,|.)
         assertTrue(LIMEService.acceptsIntoComposing(',', "", false, true, false));

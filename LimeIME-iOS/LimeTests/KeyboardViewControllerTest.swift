@@ -2196,6 +2196,21 @@ final class KeyboardViewControllerTest: XCTestCase {
             activeIM: "array", composing: "w", code: 97))
     }
 
+    // A non-root digit commits the composing code as typed ("bcs6" -> "bcs6"); other non-root
+    // keys still commit the highlighted candidate first.
+    func testNonRootDigitCommitsComposingAsTyped() {
+        for code in [48, 54, 57] {
+            XCTAssertTrue(KeyboardViewController.commitsComposingAsTyped(
+                code: code, composing: "bcs"), "code \(code)")
+        }
+        XCTAssertFalse(KeyboardViewController.commitsComposingAsTyped(
+            code: 54, composing: ""))     // nothing composing
+        XCTAssertFalse(KeyboardViewController.commitsComposingAsTyped(
+            code: 45, composing: "bcs"))  // -
+        XCTAssertFalse(KeyboardViewController.commitsComposingAsTyped(
+            code: 65, composing: "bcs"))  // A
+    }
+
     @MainActor
     func testAcceptsIntoComposingCharacterizesIPadCangjieAcceptance() {
         let controller = KeyboardViewController()
